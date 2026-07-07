@@ -1,0 +1,7 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Consuming apps must also declare + runtime-request CAMERA and
+         RECORD_AUDIO for video/voice calls — left to the app since it
+         owns the permission-rationale UX. Not required for chat-only use. -->
+</manifest>
