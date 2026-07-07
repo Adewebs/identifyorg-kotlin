@@ -187,7 +187,7 @@ class IdentifyOrgChat(val room: Room, val info: RealtimeTokenInfo) {
      * so `.onEach {}.launchIn()` doesn't type-check against it). */
     fun onMessage(scope: CoroutineScope, handler: (IdentifyOrgChatMessage) -> Unit) {
         scope.launch {
-            room.events.collect { event ->
+            room.events.collect { event: RoomEvent ->
                 if (event !is RoomEvent.DataReceived) return@collect
                 runCatching {
                     val text = String(event.data, StandardCharsets.UTF_8)
