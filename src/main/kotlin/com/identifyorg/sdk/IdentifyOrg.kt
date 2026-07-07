@@ -22,8 +22,7 @@ import io.livekit.android.room.Room
 import io.livekit.android.room.track.DataPublishReliability
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -181,11 +180,14 @@ data class IdentifyOrgChatMessage(val text: String, val from: String, val ts: Lo
  */
 class IdentifyOrgChat(val room: Room, val info: RealtimeTokenInfo) {
 
-    /** Collects room.events for DataReceived messages on [scope] until it's cancelled. */
+    /** Collects room.events for DataReceived messages on [scope] until it's cancelled.
+     * Uses `collect` inside `scope.launch`, matching LiveKit's own documented
+     * usage pattern for room.events (it isn't a plain kotlinx.coroutines Flow,
+     * so `.onEach {}.launchIn()` doesn't type-check against it). */
     fun onMessage(scope: CoroutineScope, handler: (IdentifyOrgChatMessage) -> Unit) {
-        room.events
-            .onEach { event ->
-                if (event !is RoomEvent.DataReceived) return@onEach
+        scope.launch {
+            room.events.collect { event ->
+                if (event !is RoomEvent.DataReceived) return@collect
                 runCatching {
                     val text = String(event.data, StandardCharsets.UTF_8)
                     val json = JSONObject(text)
@@ -199,7 +201,7 @@ class IdentifyOrgChat(val room: Room, val info: RealtimeTokenInfo) {
                     )
                 }
             }
-            .launchIn(scope)
+        }
     }
 
     suspend fun send(text: String, meta: Any? = null) {
