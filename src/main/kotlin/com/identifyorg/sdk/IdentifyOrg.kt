@@ -22,7 +22,7 @@ import io.livekit.android.room.Room
 import io.livekit.android.room.track.DataPublishReliability
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
@@ -182,26 +182,30 @@ data class IdentifyOrgChatMessage(val text: String, val from: String, val ts: Lo
 class IdentifyOrgChat(val room: Room, val info: RealtimeTokenInfo) {
 
     /** Collects room.events for DataReceived messages on [scope] until it's cancelled.
-     * Uses `collect` inside `scope.launch`, matching LiveKit's own documented
-     * usage pattern for room.events (it isn't a plain kotlinx.coroutines Flow,
-     * so `.onEach {}.launchIn()` doesn't type-check against it). */
+     * room.events' published type resolves to a star-projected `Flow<*>` at
+     * this call site, which breaks overload resolution for the convenience
+     * `collect { }` extension no matter how the lambda parameter is typed —
+     * so this implements `FlowCollector` directly against Flow's own member
+     * `collect(collector: FlowCollector<T>)`, which can't be ambiguous. */
     fun onMessage(scope: CoroutineScope, handler: (IdentifyOrgChatMessage) -> Unit) {
         scope.launch {
-            room.events.collect { event: RoomEvent ->
-                if (event !is RoomEvent.DataReceived) return@collect
-                runCatching {
-                    val text = String(event.data, StandardCharsets.UTF_8)
-                    val json = JSONObject(text)
-                    handler(
-                        IdentifyOrgChatMessage(
-                            text = json.getString("text"),
-                            from = event.participant?.identity?.value ?: "unknown",
-                            ts = json.getLong("ts"),
-                            meta = json.opt("meta"),
-                        ),
-                    )
+            room.events.collect(object : FlowCollector<RoomEvent> {
+                override suspend fun emit(value: RoomEvent) {
+                    if (value !is RoomEvent.DataReceived) return
+                    runCatching {
+                        val text = String(value.data, StandardCharsets.UTF_8)
+                        val json = JSONObject(text)
+                        handler(
+                            IdentifyOrgChatMessage(
+                                text = json.getString("text"),
+                                from = value.participant?.identity?.value ?: "unknown",
+                                ts = json.getLong("ts"),
+                                meta = json.opt("meta"),
+                            ),
+                        )
+                    }
                 }
-            }
+            })
         }
     }
 
