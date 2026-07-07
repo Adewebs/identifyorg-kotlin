@@ -19,10 +19,9 @@ import android.content.Context
 import io.livekit.android.LiveKit
 import io.livekit.android.events.RoomEvent
 import io.livekit.android.room.Room
-import io.livekit.android.room.participant.DataPublishReliability
+import io.livekit.android.room.track.DataPublishReliability
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.withContext
@@ -184,8 +183,9 @@ class IdentifyOrgChat(val room: Room, val info: RealtimeTokenInfo) {
 
     /** Collects room.events for DataReceived messages on [scope] until it's cancelled. */
     fun onMessage(scope: CoroutineScope, handler: (IdentifyOrgChatMessage) -> Unit) {
-        room.events.filterIsInstance<RoomEvent.DataReceived>()
+        room.events
             .onEach { event ->
+                if (event !is RoomEvent.DataReceived) return@onEach
                 runCatching {
                     val text = String(event.data, StandardCharsets.UTF_8)
                     val json = JSONObject(text)
