@@ -70,3 +70,12 @@ they can also verify BVN/NIN/FRSC and touch billing.
 `GET https://api.identifyorg.com/v1/pricing` (no auth) returns live rates —
 voice ₦1.00/min, video ₦2.50/min, stream ₦1.50/viewer-min, chat ₦0.20/min,
 charged when the session ends based on actual usage.
+
+## Hosted face verification
+
+```kotlin
+FaceCheck.launch(activity, checkUrl) { result -> /* result.passed is a signal; confirm on your server */ }
+// or in your own WebView: FaceCheck.attach(activity, webView, checkUrl, onResult)
+```
+
+> Always confirm the verdict from your server. What the app receives is only a signal. Guide: https://github.com/Adewebs/identifyorg/blob/main/docs/face-verification-integration.md
