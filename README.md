@@ -1,17 +1,26 @@
 # identifyorg-android
 
-Kotlin/Android SDK for IdentifyOrg calls, live streaming, and chat —
-built on LiveKit's official `io.livekit:livekit-android` client. API
-verified against livekit-android's published source (`LiveKit.create`,
-`Room.connect`, `LocalParticipant.publishData`, `RoomEvent.DataReceived`)
-since this module is written outside an Android/Gradle toolchain — run a
-Gradle build in your own project as a final check before shipping.
+Kotlin/Android SDK for IdentifyOrg face verification, calls, live streaming, and chat.
+Calls, streaming and chat are built on LiveKit's official `io.livekit:livekit-android` client.
+Face verification opens our hosted check in a WebView, so it needs no camera code of your own.
 
 ## Install (`settings.gradle.kts` + module `build.gradle.kts`)
 
+The SDK is served from JitPack, so add its repository first:
+
 ```kotlin
+// settings.gradle.kts
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+        maven { url = uri("https://jitpack.io") }
+    }
+}
+
+// app/build.gradle.kts
 dependencies {
-    implementation("com.identifyorg:android-sdk:0.1.0")
+    implementation("com.github.Adewebs:identifyorg-kotlin:0.3.1")
 }
 ```
 
@@ -78,4 +87,4 @@ FaceCheck.launch(activity, checkUrl) { result -> /* result.passed is a signal; c
 // or in your own WebView: FaceCheck.attach(activity, webView, checkUrl, onResult)
 ```
 
-> Always confirm the verdict from your server. What the app receives is only a signal. Guide: https://github.com/Adewebs/identifyorg/blob/main/docs/face-verification-integration.md
+> Always confirm the verdict from your server. What the app receives is only a signal. Guide: https://identifyorg.com/docs/sdks

@@ -181,15 +181,15 @@ data class IdentifyOrgChatMessage(val text: String, val from: String, val ts: Lo
  */
 class IdentifyOrgChat(val room: Room, val info: RealtimeTokenInfo) {
 
-    /** Collects room.events for DataReceived messages on [scope] until it's cancelled.
-     * room.events' published type resolves to a star-projected `Flow<*>` at
-     * this call site, which breaks overload resolution for the convenience
-     * `collect { }` extension no matter how the lambda parameter is typed —
-     * so this implements `FlowCollector` directly against Flow's own member
-     * `collect(collector: FlowCollector<T>)`, which can't be ambiguous. */
+    /** Collects the room's events for DataReceived messages on [scope] until it's cancelled.
+     * In livekit-android 2.x `room.events` is an `EventListenable`, and the
+     * stream itself is its `events` property, so it is `room.events.events`.
+     * The collector is implemented as a `FlowCollector` against Flow's own member
+     * `collect(collector)`, which avoids overload-resolution problems with
+     * the `collect { }` convenience extension on a star-projected type. */
     fun onMessage(scope: CoroutineScope, handler: (IdentifyOrgChatMessage) -> Unit) {
         scope.launch {
-            room.events.collect(object : FlowCollector<RoomEvent> {
+            room.events.events.collect(object : FlowCollector<RoomEvent> {
                 override suspend fun emit(value: RoomEvent) {
                     if (value !is RoomEvent.DataReceived) return
                     runCatching {
